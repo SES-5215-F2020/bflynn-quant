@@ -37,7 +37,6 @@ The results of the "When moved into this house or apartment" variable appear in 
 hh_data <- get_pums(variables = c("TEN", 
                                   "HINCP",
                                   "GRNTP",
-                                  "MV", 
                                   "GRPIP", 
                                   "ACCESS",
                                   "HUPAC",
@@ -46,15 +45,10 @@ hh_data <- get_pums(variables = c("TEN",
                         year = 2018, 
                         survey = "acs1",
                         recode = TRUE) %>%
-  filter(TEN_label == "Rented") %>%
-  mutate(MV = case_when(
-    MV == "1" ~ "0 to 1",
-    MV == "2" ~ "1 to 2",
-    MV == "3" ~ "2 to 4",
-    MV == "5" ~ "5 to 9",
-    MV == "6" ~ "10 to 19",
-    MV == "7" ~ "30 or more")) %>%
-  select(HINCP, GRNTP, GRPIP, MV, TEN_label, ACCESS_label, LNGI_label, HUPAC_label)
+  mutate(rent_burden = GRNTP / HINCP*100) %>%
+  filter(TEN_label == "Rented",
+         GRPIP < 101) %>%
+  select(HINCP, GRNTP, GRPIP, TEN_label, ACCESS_label, LNGI_label, HUPAC_label, rent_burden)
 
 ```
 

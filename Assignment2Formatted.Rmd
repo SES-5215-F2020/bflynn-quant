@@ -1,0 +1,368 @@
+---
+title: "Assignment 2"
+author: "Briana Flynn"
+date: "9/16/2020"
+output: html_document
+---
+# Instructions
+
+For each continuous variable in your dataset, calculate the sample mean, the sample standard deviation, the 95-percent confidence interval for the population mean, and the interquartile range. Create a histogram to illustrate the distribution of each variable and describe the distribution in a sentence or two.
+
+For each categorical variable in your dataset, calculate the 95-percent confidence interval for the proportion of the population in each category.
+
+# Variables (from Assignment 1)
+
+The distributions and proportions in this assignment are based on the following variables for renter households in Suffolk County, MA. 
+
+  1. Household income (continuous) : HINCP
+  2. Gross monthly rent payment (continuous) : GRNTP
+  3. Gross rent as a percentage of monthly income (continous) : GRPIP
+  5. Access to the internet (categorical) : ACCESS
+  6. Limited English speaking household (categorical) : LNGI
+  7. Presence and age of children in household (categorical): HUPAC
+
+Note: I have excluded year moved "MV" from my list of variables because I decided it is not relevant to the trends I hope to examine.
+
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(ggplot2)
+```
+
+```{r}
+households <- read_csv("households.csv")
+attach(households)
+```
+# Distribution of Continuous Variables
+
+## Descriptive Statistics
+
+```{r}
+hinc_summary <-  summary(HINCP)
+hinc_sd <- sd(HINCP, na.rm = TRUE)
+hinc_pop_mean_int <- t.test(HINCP)
+grntp_summary <- summary(GRNTP)
+grntp_sd <- sd(GRNTP, na.rm = TRUE)
+grntp_pop_mean_int <- t.test(GRNTP)
+grpip_summary <- summary(GRPIP)
+grpip_sd <- sd(GRPIP, na.rm = TRUE)
+grpip_pop_mean_int <- t.test(GRPIP)
+```
+
+```{r}
+summary_table <- tibble(
+  Statistic = c("Sample mean", 
+                "Median",
+                "Standard deviation",
+                "Interquartile range",
+                "Population mean (95% confidence)"),
+  `Household Income (dollars)` = c(prettyNum(hinc_summary["Mean"], digits=3),
+                           hinc_summary["Median"],
+                           prettyNum(hinc_sd, digits = 3),
+                           paste(hinc_summary["1st Qu."],"to", 
+                                 hinc_summary["3rd Qu."]),
+                           paste(prettyNum(hinc_pop_mean_int$conf.int[1],
+                                           digits=3), "to",
+                                 prettyNum(hinc_pop_mean_int$conf.int[2],
+                                               digits=3))),
+  `Rent Payment (dollars)` = c(paste(prettyNum(grntp_summary["Mean"], 
+                                           digits=3)),
+                           paste(prettyNum(grntp_summary["Median"],
+                                           digits=3)),
+                           paste(prettyNum(grntp_sd, digits=3)),
+                           paste(prettyNum(grntp_summary["1st Qu."], 
+                                           digits=3), "to",
+                                 prettyNum(grntp_summary["3rd Qu."], 
+                                           digits=3)),
+                           paste(prettyNum(grntp_pop_mean_int$conf.int[1],
+                                           digits=3), "to",
+                                 prettyNum(grntp_pop_mean_int$conf.int[2],
+                                           digits=3))),
+  `Rent as a Percentage of Household Income` =
+    c(paste(prettyNum(grpip_summary["Mean"], digits=3),"%"),
+      paste(prettyNum(grpip_summary["Median"], digits=3),"%"),
+      paste(prettyNum(grpip_sd, digits=3),"%"),
+      paste(prettyNum(grpip_summary["1st Qu."], digits=3), "% to", 
+            prettyNum(grpip_summary["3rd Qu."], digits=3), "%"),
+      paste(prettyNum(grpip_pop_mean_int$conf.int[1], digits=3), "% to",
+            prettyNum(grpip_pop_mean_int$conf.int[2], digits=3), "%")))
+knitr::kable(summary_table, 
+             caption = "Characteristics of census tracts in Suffolk County")
+```
+
+## Histograms
+
+### Household Income
+
+```{r}
+hist <- ggplot(households, aes(x = HINCP))+
+  geom_histogram(color = "grey")
+hist
+```
+
+```{r}
+hist + 
+  theme_bw() +
+  scale_x_continuous(name = "Household Income (Dollars)") +
+  scale_y_continuous(name = "Number of Housheolds in Sample") +
+  annotate("text", x = 500000, y = 5200, size = 3, 
+           label = paste("Household mean (95% confidence):",
+                         prettyNum(hinc_pop_mean_int$conf.int[1], digits = 5),
+                         "to",
+                         prettyNum(hinc_pop_mean_int$conf.int[2], digits = 5),
+                         "dollars.",
+                         "\nSample mean:", 
+                         prettyNum(mean(HINCP), digits = 5), "dollars.",
+                         "\nSample median:",
+                         prettyNum(median(HINCP), digits = 5), "dollars.",
+                         "\nSample standard deviation:",
+                         prettyNum(sd(HINCP), digits = 5), "dollars.", 
+                         "\nSample interquartile range:",
+                         prettyNum(quantile(HINCP)["25%"], digits = 5),
+                         "to",
+                         prettyNum(quantile(HINCP)["75%"], digits = 5),
+                         "dollars."),
+           hjust = 0, vjust = 1) 
+```
+
+The distribution of household income is most likely a right-skewed normal distribution. The median value is less than the mean value, because a household cannot technically have a negative income to bring the sample mean down, but one can have a very high household income (here it is apparent that there is a portion of households earning more than $250,000) to bring the mean up. 
+
+### Monthly Rent Payment
+
+```{r}
+renthist <- ggplot(households, aes(x = GRNTP)) +
+  geom_histogram(color = "gray")
+renthist
+```
+
+```{r}
+renthist +
+  theme_bw() +
+  scale_x_continuous(name = "Gross Rent Payment (Dollars)") +
+  scale_y_continuous(name = "Number of Housheolds in Sample") +
+  annotate("text", x = 2300, y = 1500, size = 3, 
+           label = paste("Household mean (95% confidence):",
+                         prettyNum(grntp_pop_mean_int$conf.int[1], digits = 5),
+                         "to",
+                         prettyNum(grntp_pop_mean_int$conf.int[2], digits = 5),
+                         "dollars.",
+                         "\nSample mean:", 
+                         prettyNum(mean(GRNTP), digits = 5), "dollars.",
+                         "\nSample median:",
+                         prettyNum(median(GRNTP), digits = 5), "dollars.",
+                         "\nSample standard deviation:",
+                         prettyNum(sd(GRNTP), digits = 5), "dollars.", 
+                         "\nSample interquartile range:",
+                         prettyNum(quantile(GRNTP)["25%"], digits = 5),
+                         "to",
+                         prettyNum(quantile(GRNTP)["75%"], digits = 5),
+                         "dollars."),
+           hjust = 0, vjust = 1) 
+```
+
+
+The distribution of monthly rent payment is right skewed, though more normally distributed than household income. Outliers on the higher end cause the mean to be higher than the median. A monthly rent of $2,020 is the 75th percentile rent for Suffolk County in 2018.
+
+
+### Rent as a Percentage of Monthly Household Income
+
+```{r}
+rentburdenhist <- ggplot(households, aes(x = GRPIP)) +
+  geom_histogram(color = "grey")
+rentburdenhist
+```
+
+```{r}
+rentburdenhist +
+  theme_bw() +
+  scale_x_continuous(name = "Rent as a Percentage of Household Income (%)") +
+  scale_y_continuous(name = "Number of Households in Sample") +
+  annotate("text", x = 50, y = 2000, size = 3, 
+           label = paste("Household mean (95% confidence):",
+                         prettyNum(grpip_pop_mean_int$conf.int[1], digits = 3),
+                         "to",
+                         prettyNum(grpip_pop_mean_int$conf.int[2], digits = 3),
+                         "percent.",
+                         "\nSample mean:", 
+                         prettyNum(mean(GRPIP), digits = 3), "percent.",
+                         "\nSample median:",
+                         prettyNum(median(GRPIP), digits = 3), "percent.",
+                         "\nSample standard deviation:",
+                         prettyNum(sd(GRPIP), digits = 3), "percent.", 
+                         "\nSample interquartile range:",
+                         prettyNum(quantile(GRPIP)["25%"], digits = 3),
+                         "to",
+                         prettyNum(quantile(GRPIP)["75%"], digits = 3),
+                         "percent."),
+           hjust = 0, vjust = 1)
+```
+
+The distribution of monthly rent as a percentage of household income is right skewed. 
+While the median household spends 25% of household income on rent, a quarter of households spend more than 38% of their income on rent and a quarter spent less than 17% of their income on rent. 
+
+# Distribution of Categorical Variables
+
+## Presence of Children in Household
+
+```{r}
+children <- unique(households$HUPAC_label)
+children
+```
+
+```{r}
+None <- t.test(HUPAC_label == children[1])
+School_aged <- t.test(HUPAC_label == children[2])
+Preschool_and_school_aged <- t.test(HUPAC_label == children[3])
+Preschool_aged <- t.test(HUPAC_label == children[4])
+shares_children <- tibble(`children` = c("No children", 
+                            "Children in K-12", 
+                            "Children in Pre-K and K-12",
+                            "Children in Pre-K"), 
+                 `Share` = c(None$estimate, 
+                             School_aged$estimate,
+                             Preschool_and_school_aged$estimate,
+                             Preschool_aged$estimate),
+                 `Low` = c(None$conf.int[1],
+                         School_aged$conf.int[1],
+                         Preschool_and_school_aged$conf.int[1],
+                         Preschool_aged$conf.int[1]),
+                 `High` = c(None$conf.int[2],
+                            School_aged$conf.int[2],
+                            Preschool_and_school_aged$conf.int[2],
+                            Preschool_aged$conf.int[2]))
+```
+
+```{r}
+show(shares_children)
+```
+
+```{r}
+shares_children_format <- tibble(`HUPAC_label` = c("No children","Children in K-12", "Children in Pre-K and K-12", "Children in Pre-K"), 
+                     `Sample proportion` =
+                       c(paste(prettyNum(None$estimate*100,
+                                         digits = 3), "%"),
+                         paste(prettyNum(School_aged$estimate*100,
+                                         digits = 3), "%"),
+                         paste(prettyNum(Preschool_and_school_aged$estimate*100,
+                                         digits = 3), "%"),
+                         paste(prettyNum(Preschool_aged$estimate*100,
+                                         digits = 3), "%")), 
+                      `95-percent confidence interval` =  
+                        c(paste(prettyNum(None$conf.int[1]*100,
+                                          digits = 3), "% to ",
+                                prettyNum(None$conf.int[2]*100,
+                                          digits = 3), "%"),
+                         paste(prettyNum(School_aged$conf.int[1]*100,
+                                          digits = 3), "% to ",
+                                prettyNum(School_aged$conf.int[2]*100,
+                                          digits = 3), "%"),
+                         paste(prettyNum(Preschool_and_school_aged$conf.int[1]*100,
+                                          digits = 3), "% to ",
+                                prettyNum(Preschool_and_school_aged$conf.int[2]*100,
+                                          digits = 3), "%"),
+                         paste(prettyNum(Preschool_aged$conf.int[1]*100,
+                                          digits = 3), "% to ",
+                                prettyNum(Preschool_aged$conf.int[2]*100,
+                                          digits = 3), "%")))
+knitr::kable(shares_children_format, caption = "Census tracts in Suffolk County")
+```
+
+
+## Internet Access in Household
+
+```{r}
+access <- unique(ACCESS_label)
+access
+```
+
+```{r}
+Yes_pay <- t.test(ACCESS_label == access[1])
+Yes_dontpay <- t.test(ACCESS_label == access[2])
+No <- t.test(ACCESS_label == access[3])
+shares_access <- tibble(`access` = c("YP", 
+                            "Y",
+                            "N"), 
+                 `Share` = c(Yes_pay$estimate, 
+                             Yes_dontpay$estimate,
+                             No$estimate),
+                 `Low` = c(Yes_pay$conf.int[1],
+                         Yes_dontpay$conf.int[1],
+                         No$conf.int[1]),
+                 `High` = c(Yes_pay$conf.int[2],
+                            Yes_dontpay$conf.int[2],
+                            No$conf.int[2]))
+```
+
+```{r}
+show(shares_access)
+```
+
+```{r}
+shares_access_format <- tibble(`ACCESS_label` = c("Yes, paid for","Yes, not paid for", "No access"), 
+                     `Sample proportion` =
+                       c(paste(prettyNum(Yes_pay$estimate*100,
+                                         digits = 3), "%"),
+                         paste(prettyNum(Yes_dontpay$estimate*100,
+                                         digits = 3), "%"),
+                         paste(prettyNum(No$estimate*100,
+                                         digits = 3), "%")), 
+                      `95-percent confidence interval` =  
+                        c(paste(prettyNum(Yes_pay$conf.int[1]*100,
+                                          digits = 3), "% to ",
+                                prettyNum(Yes_pay$conf.int[2]*100,
+                                          digits = 3), "%"),
+                         paste(prettyNum(Yes_dontpay$conf.int[1]*100,
+                                          digits = 3), "% to ",
+                                prettyNum(Yes_dontpay$conf.int[2]*100,
+                                          digits = 3), "%"),
+                         paste(prettyNum(No$conf.int[1]*100,
+                                          digits = 3), "% to ",
+                                prettyNum(No$conf.int[2]*100,
+                                          digits = 3), "%")))
+knitr::kable(shares_access_format, caption = "Census tracts in Suffolk County")
+```
+
+## English-speaking Ability in Households
+
+```{r}
+LNGI <- unique(LNGI_label)
+LNGI
+```
+
+```{r}
+English <- t.test(LNGI_label == LNGI[1])
+NoEnglish <- t.test(LNGI_label == LNGI[2])
+shares_LNGI <- tibble(`LNGI` = c("English proficient", 
+                            "Not English proficient"), 
+                 `Share` = c(English$estimate, 
+                             NoEnglish$estimate),
+                 `Low` = c(English$conf.int[1],
+                         NoEnglish$conf.int[1]),
+                 `High` = c(English$conf.int[2],
+                            NoEnglish$conf.int[2]))
+```
+
+```{r}
+show(shares_LNGI)
+```
+
+```{r}
+shares_LNGI_format <- tibble(`LNGI` = c("English proficient","Not English proficient"), 
+                     `Sample proportion` =
+                       c(paste(prettyNum(English$estimate*100,
+                                         digits = 3), "%"),
+                         paste(prettyNum(NoEnglish$estimate*100,
+                                         digits = 3), "%")), 
+                      `95-percent confidence interval` =  
+                        c(paste(prettyNum(English$conf.int[1]*100,
+                                          digits = 3), "% to ",
+                                prettyNum(English$conf.int[2]*100,
+                                          digits = 3), "%"),
+                         paste(prettyNum(NoEnglish$conf.int[1]*100,
+                                          digits = 3), "% to ",
+                                prettyNum(NoEnglish$conf.int[2]*100,
+                                          digits = 3), "%")))
+knitr::kable(shares_LNGI_format, caption = "Census tracts in Suffolk County")
+```
+
