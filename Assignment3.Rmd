@@ -1,0 +1,456 @@
+---
+title: "Assignment 3"
+author: "Briana Flynn"
+date: "9/24/2020"
+output: html_document
+---
+
+# Instructions: Correlations, Differences, and Associations
+
+For all possible pairs of variables in your dataset, test the relationship between the two variables. Indicate the significance and (if appropriate) the magnitude of each relationship.
+
+##  Variables
+
+  1. Household income (continuous) : HINCP
+  2. Gross monthly rent payment (continuous) : GRNTP
+  3. Gross rent as a percentage of monthly income (continous) : GRPIP
+  5. Access to the internet (categorical) : ACCESS
+  6. Limited English speaking household (categorical) : LNGI
+  7. Presence and age of children in household (categorical): HUPAC
+  
+## Testing the Relationships between All Variables
+
+In order to determine the permutations needed and the appropriate test, I've paired all of my variables and noted whether there are continuous ("cont"), categorical with two categories ("cat. 2"), or categorical with three or more categories ("cat. 3+").
+
+  1. HINCP (cont) + GRNTP (cont) : Pearson
+  2. HINCP (cont) + GRPIP (cont) : Pearson 
+  3. HINCP (cont) + ACCESS (cat. 3+) : ANOVA 
+  4. HINCP (cont) + LNGI (cat. 2) : 2-sample T-test 
+  4. HINCP (cont) + HUPAC (cat. 3+) : ANOVA 
+  5. GRNTP (cont) + GRPIP (cont) : Pearson 
+  6. GRNTP (cont) + ACCESS (cat. 3+) : ANOVA 
+  7. GRNTP (cont) + LNGI (cat. 2) : 2-sample T-test 
+  8. GRNTP (cont) + HUPAC (cat. 3+) : ANOVA 
+  9. GRPIP (cont) + ACCESS (cat. 3+) : ANOVA 
+  10. GRPIP (cont) + LNGI (cat. 2) : 2-sample T-test 
+  11. GRPIP (cont) + HUPAC (cat 3+) : ANOVA 
+  12. ACCESS (cat. 3+) + LNGI (cat. 2) : Chi-square 
+  13. ACCESS (cat. 3+) + HUPAC (cat. 3+) : Chi-square 
+  14. LNGI (cat. 2) + HUPAC (cat. 3+) : Chi-square 
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(ggplot2)
+```
+
+```{r}
+households <- read_csv("households.csv")
+attach(households)
+```
+
+## Relationships between Continuous Variables
+
+```{r}
+correlation <- cor.test(households$HINCP, households$GRNTP)
+
+correlation
+```
+
+```{r}
+ggplot(households, aes(x = HINCP, y = GRNTP)) +
+  geom_point(size = 0.5, alpha = 0.25, position = "jitter") +
+  geom_smooth() +
+  theme_bw() +
+  scale_x_continuous(name = "Household Income") +
+  scale_y_continuous(name = "Gross Monthly Rent", 
+                     breaks = seq(0, 6000, by = 500),
+                     labels = paste("$", 
+                                    prettyNum(seq(0, 6000, by = 500),
+                                              big.mark = ","))) +
+  annotate(geom = "text", x = 0, y = 5000, 
+           label = paste("Correlation (95-percent confidence):",
+                         prettyNum(correlation$conf.int[1], digits = 2), 
+                         "to",
+                         prettyNum(correlation$conf.int[2], digits = 2)),
+           hjust = 0)
+```
+
+While there is a statistically significant relationship between Household Income and Rent, the strength of the relationship is not very strong, with a correlation of around 0.5. 
+
+
+```{r}
+correlation <- cor.test(households$HINCP, households$GRPIP)
+
+correlation
+```
+
+```{r}
+ggplot(households, aes(x = HINCP, y = GRPIP)) +
+  geom_point(size = 0.5, alpha = 0.25, position = "jitter") +
+  geom_smooth() +
+  theme_bw() +
+  scale_x_continuous(name = "Household Income") +
+  scale_y_continuous(name = "Rent Burden", 
+                     breaks = seq(0, 100, by = 10),
+                     labels = paste("%", 
+                                    prettyNum(seq(0, 100, by = 10),
+                                              big.mark = ","))) +
+  annotate(geom = "text", x = 250000, y = 100, 
+           label = paste("Correlation (95-percent confidence):",
+                         prettyNum(correlation$conf.int[1], digits = 2), 
+                         "to",
+                         prettyNum(correlation$conf.int[2], digits = 2)),
+           hjust = 0)
+```
+
+There is a statistically significant relationship between Household Income and Rent Burden, but not a very strong one, with a correlation of around -0.45. 
+
+```{r}
+correlation <- cor.test(households$GRNTP, households$GRPIP)
+
+correlation
+```
+
+```{r}
+ggplot(households, aes(x = GRNTP, y = GRPIP)) +
+  geom_point(size = 0.5, alpha = 0.25, position = "jitter") +
+  geom_smooth() +
+  theme_bw() +
+  scale_x_continuous(name = "Gross Monthly Rent") +
+  scale_y_continuous(name = "Rent Burden", 
+                     breaks = seq(0, 100, by = 10),
+                     labels = paste("%", 
+                                    prettyNum(seq(0, 100, by = 10),
+                                              big.mark = ","))) +
+  annotate(geom = "text", x = 1500, y = 100, 
+           label = paste("Correlation (95-percent confidence):",
+                         prettyNum(correlation$conf.int[1], digits = 2), 
+                         "to",
+                         prettyNum(correlation$conf.int[2], digits = 2)),
+           hjust = 0)
+```
+
+Interestingly, there is a very weak relationship between rent and rent burden, with a correlation value of around 0.05. While the P value indicates a significant relationship, the P value is notably higher than in the previous two tests. 
+
+## Continous and Categorial Variables
+
+```{r}
+difference = t.test(HINCP ~ LNGI_label == "At least one person in the household 14 and over speaks English only or speaks English 'very well'",
+                    data = households)
+
+difference
+```
+```{r}
+ggplot(households, aes(x = LNGI_label, y = HINCP)) +
+  geom_violin() +
+  theme_bw() +
+  scale_x_discrete(name = "Is someone in the household over 13 and proficient in English?",
+                   labels = c("No", "Yes")) +
+   scale_y_continuous(name = "Household Income", 
+                     breaks = seq(0, 750000, by = 100000),
+                     labels = paste("$", 
+                                    prettyNum(seq(0, 750000, by = 100000),
+                                              big.mark = ","))) +
+  annotate(geom = "text", x = 1.5, y = 250000, size = 3,
+           label = paste("Difference in means\n(95% confidence):\n$",
+                         prettyNum(abs(difference$conf.int[2]), 
+                                   digits = 5), " to $",
+                         prettyNum(abs(difference$conf.int[1]), 
+                                   digits = 5),
+                         sep = "")) +
+  annotate(geom = "text", x = 1, y = difference$estimate[1], size = 3,
+           label = paste("Mean (95% confidence):\n$",
+                         prettyNum(difference$estimate[1], digits = 5))) +
+  annotate(geom = "text", x = 2, y = difference$estimate[2], size = 3,
+           label = paste("Mean (95% confidence):\n$",
+                         prettyNum(difference$estimate[2], digits = 5)))
+```
+
+Here it is clear that there is a significant relationship between Household Income and Household Proficiency in English, with a small P value and close to a 90% ($40,000) difference in average household incomes for whether or not the household is proficient in English. 
+
+```{r}
+difference_GRNTP = t.test(GRNTP ~ LNGI_label == "At least one person in the household 14 and over speaks English only or speaks English 'very well'",
+                    data = households)
+
+difference_GRNTP
+```
+
+
+```{r}
+ggplot(households, aes(x = LNGI_label, y = GRNTP)) +
+  geom_violin() +
+  theme_bw() +
+  scale_x_discrete(name = "Is someone in the household over 13 and proficient in English?",
+                   labels = c("No", "Yes")) +
+   scale_y_continuous(name = "Gross monthly rent", 
+                     breaks = seq(0, 10000, by = 500),
+                     labels = paste("$", 
+                                    prettyNum(seq(0, 10000, by = 500),
+                                              big.mark = ","))) +
+  annotate(geom = "text", x = 1.5, y = 2500, size = 3,
+           label = paste("Difference in means\n(95% confidence):\n$",
+                         prettyNum(abs(difference_GRNTP$conf.int[2]), 
+                                   digits = 0), " to $",
+                         prettyNum(abs(difference_GRNTP$conf.int[1]), 
+                                   digits = 0),
+                         sep = "")) +
+  annotate(geom = "text", x = 1, y = difference_GRNTP$estimate[1], size = 3,
+           label = paste("Mean (95% confidence):\n$",
+                         prettyNum(difference_GRNTP$estimate[1], digits = 4))) +
+  annotate(geom = "text", x = 2, y = difference_GRNTP$estimate[2], size = 3,
+           label = paste("Mean (95% confidence):\n$",
+                         prettyNum(difference_GRNTP$estimate[2], digits = 4)))
+```
+
+Here again there appears to be a statistically significant relationship between rent and English proficiency, although at a slightly lower magnitude than household income. The difference between average rents is about $400, with households with English proficiency spending about 30% more on rent than those without English proficiency.
+
+```{r}
+difference_GRPIP = t.test(GRPIP ~ LNGI_label == "At least one person in the household 14 and over speaks English only or speaks English 'very well'",
+                    data = households)
+
+difference_GRPIP
+```
+
+```{r}
+ggplot(households, aes(x = LNGI_label, y = GRPIP)) +
+  geom_violin() +
+  theme_bw() +
+  scale_x_discrete(name = "Is someone in the household over 13 and proficient in English?",
+                   labels = c("No", "Yes")) +
+   scale_y_continuous(name = "Rent Burden", 
+                     breaks = seq(0, 100, by = 10),
+                     labels = paste("%", 
+                                    prettyNum(seq(0, 100, by = 10),
+                                              big.mark = ","))) +
+  annotate(geom = "text", x = 1.5, y = 50, size = 3,
+           label = paste("Difference in means\n(95% confidence):\n%",
+                         prettyNum(abs(difference_GRPIP$conf.int[2]), 
+                                   digits = 3), " to %",
+                         prettyNum(abs(difference_GRPIP$conf.int[1]), 
+                                   digits = 3),
+                         sep = "")) +
+  annotate(geom = "text", x = 1, y = difference_GRPIP$estimate[1], size = 3,
+           label = paste("Mean (95% confidence):\n%",
+                         prettyNum(difference_GRPIP$estimate[1], digits = 3))) +
+  annotate(geom = "text", x = 2, y = difference_GRPIP$estimate[2], size = 3,
+           label = paste("Mean (95% confidence):\n%",
+                         prettyNum(difference_GRPIP$estimate[2], digits = 3)))
+```
+
+There appears to be a significant relationship here again, though the P value is somewhat further from zero than in the previous two variable relationships. There is a relatively small difference in the average rent burden between the two language groups, at around 3 to 5 percent. 
+
+```{r}
+anova_HINCPAccess <- aov(HINCP ~ ACCESS_label, data = households)
+
+summary(anova_HINCPAccess)
+```
+
+```{r}
+differences_HINCPAccess <- TukeyHSD(anova_HINCPAccess)
+
+as_tibble(cbind(pair = row.names(differences_HINCPAccess$ACCESS_label),
+                differences_HINCPAccess$ACCESS_label))
+```
+ 
+```{r}
+ggplot(households, aes(x = ACCESS_label, y = HINCP)) +
+  geom_boxplot() +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90)) +
+  scale_x_discrete(name = "Access to Internet") +
+  scale_y_continuous(name = "Household Income", 
+                     breaks = seq(0, 1000000, by = 50000),
+                     labels = paste("$", 
+                                    prettyNum(seq(0, 1000000, by = 50000),
+                                              big.mark = ","))) 
+```
+
+There appears to be a significant relationship between internet access and household income with a P value near 0. 
+
+```{r}
+anova_GRNTPAccess <- aov(GRNTP ~ ACCESS_label, data = households)
+
+summary(anova_GRNTPAccess)
+```
+
+```{r}
+differences_GRNTPAccess <- TukeyHSD(anova_GRNTPAccess)
+
+as_tibble(cbind(pair = row.names(differences_GRNTPAccess$ACCESS_label),
+                differences_GRNTPAccess$ACCESS_label))
+```
+```{r}
+ggplot(households, aes(x = ACCESS_label, y = GRNTP)) +
+  geom_boxplot() +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90)) +
+  scale_x_discrete(name = "Access to Internet") +
+  scale_y_continuous(name = "Gross Monthly Rent", 
+                     breaks = seq(0, 6000, by = 1000),
+                     labels = paste("$", 
+                                    prettyNum(seq(0, 6000, by = 1000),
+                                              big.mark = ","))) 
+```
+There appears to be a significant relationship between internet access and rent with a P value near 0. 
+
+```{r}
+anova_GRPIPAccess <- aov(GRPIP ~ ACCESS_label, data = households)
+
+summary(anova_GRPIPAccess)
+```
+
+```{r}
+differences_GRPIPAccess <- TukeyHSD(anova_GRPIPAccess)
+
+as_tibble(cbind(pair = row.names(differences_GRPIPAccess$ACCESS_label),
+                differences_GRPIPAccess$ACCESS_label))
+```
+ 
+```{r}
+ggplot(households, aes(x = ACCESS_label, y = GRPIP)) +
+  geom_boxplot() +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90)) +
+  scale_x_discrete(name = "Access to Internet") +
+  scale_y_continuous(name = "Rent Burden", 
+                     breaks = seq(0, 100, by = 10),
+                     labels = paste("$", 
+                                    prettyNum(seq(0, 100, by = 10),
+                                              big.mark = ","))) 
+```
+
+There appears to be a significant relationship between internet access and rent burden with a P value near 0. 
+
+```{r}
+anova_HINCPHUPAC <- aov(HINCP ~ HUPAC_label, data = households)
+
+summary(anova_HINCPHUPAC)
+```
+
+```{r}
+differences_HINCPHUPAC <- TukeyHSD(anova_HINCPHUPAC)
+
+as_tibble(cbind(pair = row.names(differences_HINCPHUPAC$HUPAC_label),
+                differences_HINCPHUPAC$HUPAC_label))
+```
+
+```{r}
+ggplot(households, aes(x = HUPAC_label, y = HINCP)) +
+  geom_boxplot() +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90)) +
+  scale_x_discrete(name = "Presence and Age of Children") +
+  scale_y_continuous(name = "Household Income", 
+                     breaks = seq(0, 1000000, by = 100000),
+                     labels = paste("$", 
+                                    prettyNum(seq(0, 1000000, by = 100000),
+                                              big.mark = ","))) 
+```
+
+There appears to be a significant relationship between household income and the presence and age of children in the household with a P value near 0, though when it is plotted there is only a small difference in average income across the groups. 
+
+```{r}
+anova_GRNTPHUPAC <- aov(GRNTP ~ HUPAC_label, data = households)
+
+summary(anova_GRNTPHUPAC)
+```
+
+```{r}
+differences_GRNTPHUPAC <- TukeyHSD(anova_GRNTPHUPAC)
+
+as_tibble(cbind(pair = row.names(differences_GRNTPHUPAC$HUPAC_label),
+                differences_GRNTPHUPAC$HUPAC_label))
+```
+
+```{r}
+ggplot(households, aes(x = HUPAC_label, y = GRNTP)) +
+  geom_boxplot() +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90)) +
+  scale_x_discrete(name = "Access to Internet") +
+  scale_y_continuous(name = "Gross Monthly Rent", 
+                     breaks = seq(0, 6000, by = 1000),
+                     labels = paste("$", 
+                                    prettyNum(seq(0, 6000, by = 1000),
+                                              big.mark = ","))) 
+```
+There appears to be a significant relationship between rent and presence/age of children according to the P value. The difference in median rent does not appear to be pronounced in the box plot, but the interquartile range does appear to vary notably by presence of children.                         
+                              
+```{r}
+anova_GRPIPHUPAC <- aov(GRPIP ~ HUPAC_label, data = households)
+
+summary(anova_GRPIPHUPAC)
+```
+
+```{r}
+differences_GRPIPHUPAC <- TukeyHSD(anova_GRPIPHUPAC)
+
+as_tibble(cbind(pair = row.names(differences_GRPIPHUPAC$HUPAC_label),
+                differences_GRPIPHUPAC$HUPAC_label))
+```
+
+```{r}
+ggplot(households, aes(x = HUPAC_label, y = GRPIP)) +
+  geom_boxplot() +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90)) +
+  scale_x_discrete(name = "Presence of Children") +
+  scale_y_continuous(name = "Rent Burden", 
+                     breaks = seq(0, 100, by = 10),
+                     labels = paste("$", 
+                                    prettyNum(seq(0, 100, by = 10),
+                                              big.mark = ","))) 
+```
+Again, there appears to be a statistically significant relationship between rent burden and presence of children with a near 0 P-value. It seems that the presence of children over 6 may be correlated to a somewhat higher rent burden than for those without children or with children under 6. 
+
+```{r}
+chi_sq <- chisq.test(households$HUPAC_label, households$LNGI_label == 
+                       "At least one person in the household 14 and over speaks English only or speaks English 'very well'") 
+
+chi_sq
+```
+
+```{r}
+chi_sq$observed
+```
+ 
+```{r}
+chi_sq$expected
+```
+
+The P-value indicates that there is likely a significant relationship between presence of children and English-speaking ability.
+
+```{r}
+chi_sq2 <- chisq.test(households$ACCESS_label, households$LNGI_label == 
+                       "At least one person in the household 14 and over speaks English only or speaks English 'very well'") 
+
+chi_sq2
+```
+
+```{r}
+chi_sq2$observed
+```
+ 
+```{r}
+chi_sq2$expected
+```
+The P-value indicates that there is likely a significant relationship between English proficiency and internet access. However, when comparing the expected and observed results, the differences seem to be very small. 
+
+```{r}
+chi_sq3 <- chisq.test(households$ACCESS_label, households$HUPAC_label == 
+                       "No children") 
+
+chi_sq3
+```
+
+```{r}
+chi_sq3$observed
+```
+ 
+```{r}
+chi_sq3$expected
+```
+The P-value indicates that there is likely a significant relationship between presence of children and internet access. This is somehwat apparent in the differences in observed and expected chi-square test results. 
+
+ 
+ 
