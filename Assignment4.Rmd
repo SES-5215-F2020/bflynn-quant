@@ -1,0 +1,48 @@
+---
+title: "Assignment4"
+author: "Briana Flynn"
+date: "9/28/2020"
+output: html_document
+---
+
+# Instructions
+
+Estimate a regression model to predict the values of one of the continuous variables in your dataset based on the values of the other variables in your dataset.
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+hh_data <- read_csv("households.csv") %>%
+  mutate(children = case_when(
+    HUPAC_label=="No children" ~ "None",
+    HUPAC_label=="With children 6 to 17 years only" ~ "6 to 17",
+    HUPAC_label=="With children under 6 years and 6 to 17 years" ~ "0 to 17",
+    HUPAC_label=="With children under 6 years only" ~ "0 to 6")) %>%
+  mutate(internet = case_when(
+    ACCESS_label=="Yes, by paying a cell phone company or Internet service provider" ~ "Yes",
+    ACCESS_label=="Yes, without paying a cell phone company or Internet service provider" ~ "Yes",
+    ACCESS_label=="No access to the Internet at this house, apartment, or mobile home" ~ "No")) %>%
+  mutate(engl_prof = 
+           LNGI_label == "At least one person in the household 14 and over speaks English only or speaks English 'very well'")
+```
+
+```{r}
+options(scipen = 999)
+model <- lm(GRNTP ~ HINCP + GRPIP + engl_prof + children + internet, 
+            data = hh_data)
+
+summary(model)
+```
+The multiple r-squared results of 0.3757 tell me that these variables likely predict about 37.6% of the variation in rental costs of the homes in this dataset. This struck me as quite high. 
+
+In the results above, the coefficient estimate for household income (HINCP) is 0.0066. This means that every 1 dollar increase in household income is associated with a gross rent increase of 0.006 dollars (60 percent of one cent). The P-value for household income is extremely close to zero, suggesting that this relationship is statistically significant. 
+
+The coefficient estimate of rent burden (GRPIP) is 15.31. This tells us that each additional percentage point of income spent on rent is associated with an average increase in rent of $15.38. The P-value for rent burden is extremely close to zero, suggesting that this relationship is statistically significant. This result surprised me because in my previous correlation test for rent burden and rent, the results suggested a weak relationship. 
+
+The coefficient for English language proficiency (engl_profTRUE) is 129.66, meaning that households in which at least one person over the age of 14 speaks english very well pay $129.66 more in rent on average than households without English proficiency do, controlling for everything else in the model. The P-value for English proficiency is near zero, suggesting that this relationship is statistically significant.
+
+The coefficients for the categorical variable regarding presence of children ranged from -19.829 to 36.08, with the benchmark to which these variables are being compared being presence of multiple children ages 0 to 17. The results suggest that households with no children and households with children ages 0 to 6 only spend an average of 36 dollars more on rent than households with multiple children aged 0 to 17. On the other hand, households with children ages 6 to 17 spend an average of 19 dollars less on rent than households with multipe children aged 0 to 17. That being said, these results are not significantly significant, with P-values well above zero. The results for households with no children is the closest to zero and the only category with potential statistical significance, but it still seems unlikely to be a significant result.   
+
+The coefficient for internet access (internetYes) is 470.69, by far the largest of the coefficients in this dataset. This means that households with internet access pay an average of 471 dollars more on rent than those without internet access. The P-value is extremely close to zero, suggesting that this relationship is statistically significant. 
