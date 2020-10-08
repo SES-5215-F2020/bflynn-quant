@@ -397,6 +397,7 @@ library(broom.mixed)</code></pre>
 <h1>Testing log-transformations and interactions to improve model fit</h1>
 <div id="model-1-initial-model" class="section level2">
 <h2>Model 1: Initial Model</h2>
+<p>For this assignment, I’ve revised my dependent and independent variables after feedback during Monday’s class. I learned that my r-squared values were so high for Assignment 4 because of the direct relationship between rent, household income, and rent burden. For this assignment, I’ve removed monthly rent from my variables, and have made rent burden my dependent variable. I am now looking at how household income, internet access, English proficiency, and presence of children impact rent burden level.</p>
 <pre class="r"><code>options(scipen = 999)
 model1 &lt;- lm(GRPIP ~ HINCP + engl_prof + children + internet, 
             data = hh_data)
